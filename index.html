@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <!-- 문자 인코딩과 모바일 화면 크기를 설정합니다. -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7fb">
+    <title>구독 관리</title>
+    <!-- 별도 빌드 과정 없이 CSS와 JavaScript 파일을 브라우저가 직접 읽습니다. -->
+    <link rel="stylesheet" href="css/style.css">
+    <!-- defer를 사용해 HTML을 먼저 읽은 뒤 위에서 아래 순서대로 스크립트를 실행합니다.
+         logic.js의 계산 함수를 ui.js와 main.js에서 사용하므로 먼저 불러옵니다. -->
+    <script src="js/logic.js" defer></script>
+    <script src="js/ui.js" defer></script>
+    <script src="js/main.js" defer></script>
+  </head>
+  <body>
+    <!-- 페이지 전체 내용을 가운데 정렬하고 최대 너비를 제한하는 바깥 컨테이너입니다. -->
+    <main class="app-shell">
+      <!-- 페이지 이름과 짧은 안내 문구 -->
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">MY SUBSCRIPTIONS</p>
+          <h1>구독 관리</h1>
+          <p class="page-description">매달 나가는 구독료를 한눈에 확인하세요.</p>
+        </div>
+      </header>
+
+      <!-- 저장 오류 같은 안내를 표시합니다. role과 aria-live로 보조 기술에도 변경을 알립니다. -->
+      <p id="app-message" class="app-message" role="status" aria-live="polite" hidden></p>
+
+      <!-- JS가 각 id를 찾아 구독 데이터로 숫자를 갱신하는 요약 영역 -->
+      <section class="summary-grid" aria-label="구독 요약">
+        <article class="summary-card summary-card-primary">
+          <p class="summary-label">월 합계</p>
+          <p id="monthly-total" class="summary-value">0원</p>
+          <p class="summary-note">월 기준 구독료</p>
+        </article>
+        <article class="summary-card">
+          <p class="summary-label">연간 합계</p>
+          <p id="yearly-total" class="summary-value">0원</p>
+          <p class="summary-note">월 합계 × 12개월</p>
+        </article>
+        <article class="summary-card">
+          <p class="summary-label">이번 주 결제 예정</p>
+          <p id="upcoming-count" class="summary-value">0건</p>
+          <p class="summary-note">오늘부터 7일 이내</p>
+        </article>
+      </section>
+
+      <!-- 넓은 화면에서는 목록과 입력 영역을 나란히 배치하고,
+           좁은 화면에서는 CSS 반응형 규칙에 따라 세로로 배치합니다. -->
+      <div class="content-grid">
+        <!-- 구독 카드가 JavaScript로 생성되어 들어갈 영역 -->
+        <section class="panel subscriptions-panel" aria-labelledby="subscriptions-heading">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">YOUR SERVICES</p>
+              <h2 id="subscriptions-heading">구독 목록</h2>
+            </div>
+            <span id="subscription-count" class="count-badge">0개</span>
+          </div>
+          <div id="subscription-list" class="subscription-list"></div>
+        </section>
+
+        <!-- 추가/수정 폼과 월 지출 카테고리 분석 -->
+        <aside class="side-column">
+          <section class="panel form-panel" aria-labelledby="form-heading">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">ADD OR EDIT</p>
+                <h2 id="form-heading">새 구독 추가</h2>
+              </div>
+            </div>
+            <!-- 수정 중인 구독의 id는 숨겨진 필드로 보관합니다.
+                 값이 비어 있으면 새 구독, 값이 있으면 기존 구독 수정입니다. -->
+            <form id="subscription-form">
+              <input id="subscription-id" name="id" type="hidden">
+              <!-- required, min, maxlength는 브라우저의 기본 입력 검증에도 사용됩니다. -->
+              <label>
+                구독 이름
+                <input id="name" name="name" type="text" maxlength="60" placeholder="예: 넷플릭스" required>
+              </label>
+              <div class="form-row">
+                <label>
+                  결제 금액
+                  <div class="amount-input">
+                    <input id="amount" name="amount" type="number" min="1" step="1" placeholder="13500" required>
+                    <span>원</span>
+                  </div>
+                </label>
+                <label>
+                  결제 주기
+                  <select id="cycle" name="cycle">
+                    <option value="monthly">매월</option>
+                    <option value="yearly">매년</option>
+                  </select>
+                </label>
+              </div>
+              <label>
+                다음 결제일
+                <input id="next-payment-date" name="nextPaymentDate" type="date" required>
+              </label>
+              <label>
+                카테고리
+                <input id="category" name="category" type="text" maxlength="30" list="category-options" placeholder="예: 영상" required>
+                <!-- 자주 쓰는 카테고리를 제안하지만 직접 다른 값을 입력할 수도 있습니다. -->
+                <datalist id="category-options">
+                  <option value="영상"></option>
+                  <option value="음악"></option>
+                  <option value="운동"></option>
+                  <option value="생산성"></option>
+                  <option value="기타"></option>
+                </datalist>
+              </label>
+              <label>
+                결제 수단 <span class="optional-label">선택</span>
+                <input id="payment-method" name="paymentMethod" type="text" maxlength="40" placeholder="예: 신한카드">
+              </label>
+              <div class="form-actions">
+                <button id="cancel-edit" class="button button-secondary" type="button" hidden>수정 취소</button>
+                <button id="submit-button" class="button button-primary" type="submit">구독 추가</button>
+              </div>
+            </form>
+          </section>
+
+          <!-- 카테고리별 월 지출 합계와 전체에서 차지하는 비율 -->
+          <section class="panel category-panel" aria-labelledby="category-heading">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">MONTHLY SPENDING</p>
+                <h2 id="category-heading">카테고리별 비중</h2>
+              </div>
+            </div>
+            <div id="category-breakdown" class="category-breakdown"></div>
+          </section>
+        </aside>
+      </div>
+      <!-- 데이터는 서버가 아니라 현재 브라우저의 localStorage에 저장됩니다. -->
+      <footer class="page-footer">구독 데이터는 이 브라우저의 기기에 저장됩니다.</footer>
+    </main>
+  </body>
+</html>
